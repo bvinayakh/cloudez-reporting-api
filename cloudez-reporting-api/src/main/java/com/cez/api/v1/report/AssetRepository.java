@@ -1,4 +1,4 @@
-package com.cez.api.v1.inventory;
+package com.cez.api.v1.report;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;

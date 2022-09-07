@@ -1,4 +1,4 @@
-package com.cez.api.v1.inventory;
+package com.cez.api.v1.report;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -13,6 +13,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -26,13 +27,13 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.cez.api.v1.aws.auth.Credentials;
+import com.cez.api.v1.auth.aws.Credentials;
 import com.cez.api.v1.commons.aws.Client;
 import com.cez.api.v1.utils.ReportUtils;
 
 @RestController
-@RequestMapping("/api/v1/cloudez-reporting-api/inventory")
-public class CloudezInventoryController
+@RequestMapping("reporting/api/v1")
+public class CloudezReportController
 {
   @Autowired
   private AssetRepository repository;
@@ -43,44 +44,48 @@ public class CloudezInventoryController
   private Credentials credentials = null;
   private AmazonS3 s3Client = null;
 
-  public CloudezInventoryController()
+  @Value("${execution.mode}")
+  private String executionMode;
+
+  public CloudezReportController()
   {
-    credentials = new Credentials();
+    credentials = new Credentials(executionMode);
   }
 
   @GetMapping("/ping")
   String ping()
   {
-    return ("cloudez-reporting-inventory-api");
+    return ("cloudez-reporting-api");
   }
 
-  @GetMapping("/store/{account}")
-  String store(@PathVariable String account)
+  @GetMapping("/store/{account}/{type}")
+  String store(@PathVariable String account, @PathVariable Integer type)
   {
-    DateTime time = new DateTime();
-    String reportName = env.getProperty("reports.inventory.type") + "-" + time.getMonthOfYear() + time.getDayOfMonth() + time.getYear() + ".csv";
     String uploadHash = null;
-
-    s3Client = new Client(account, credentials).getS3Client();
-
-    try
+    if (type == 0)
     {
-      File report = new File(reportName);
-      FileWriter out = new FileWriter(report);
-      String header[] = {"Account", "Service", "ID", "Type", "ARN", "Region"};
-      List<AWSAsset> assetList = repository.getAllAssets(account);
-      CSVPrinter csv = new CSVPrinter(out, CSVFormat.DEFAULT.withHeader(header));
-      for (AWSAsset asset : assetList)
+      DateTime time = new DateTime();
+      String reportName = env.getProperty("reports.inventory.type") + "-" + time.getYear() + time.getMonthOfYear() + time.getDayOfMonth() + ".csv";
+      s3Client = new Client(account, credentials).getS3Client();
+      try
       {
-        csv.printRecord(asset.getAccount(), asset.getService(), asset.getUniqueIdentifier(), asset.getResourceType(), asset.getArn(), asset.getRegion());
+        File report = new File(reportName);
+        FileWriter out = new FileWriter(report);
+        String header[] = {"Account", "Service", "ID", "Type", "ARN", "Region"};
+        List<AWSAsset> assetList = repository.getAllAssets(account);
+        CSVPrinter csv = new CSVPrinter(out, CSVFormat.DEFAULT.withHeader(header));
+        for (AWSAsset asset : assetList)
+        {
+          csv.printRecord(asset.getAccount(), asset.getService(), asset.getUniqueIdentifier(), asset.getResourceType(), asset.getArn(), asset.getRegion());
+        }
+        uploadHash =
+            s3Client.putObject(env.getProperty("reports.bucket.name"), env.getProperty("reports.inventory.type") + "/" + reportName, report).getContentMd5();
+        report.delete();
       }
-      uploadHash =
-          s3Client.putObject(env.getProperty("reports.bucket.name"), env.getProperty("reports.inventory.type") + "/" + reportName, report).getContentMd5();
-      report.delete();
-    }
-    catch (IOException e)
-    {
-      System.err.println(e.getMessage());
+      catch (IOException e)
+      {
+        System.err.println(e.getMessage());
+      }
     }
     return uploadHash;
   }

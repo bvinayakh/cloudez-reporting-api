@@ -1,4 +1,4 @@
-package com.cez.api.v1.inventory;
+package com.cez.api.v1.report;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
