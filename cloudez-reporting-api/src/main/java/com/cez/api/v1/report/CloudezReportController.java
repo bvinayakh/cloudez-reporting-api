@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,6 +53,7 @@ public class CloudezReportController
     return ("cloudez-reporting-api");
   }
 
+  @CrossOrigin(origins = "http://localhost:8080")
   @GetMapping("/store/{account}/{type}")
   String store(@PathVariable String account, @PathVariable String type)
   {
@@ -84,6 +86,7 @@ public class CloudezReportController
     return uploadHash;
   }
 
+  @CrossOrigin(origins = "http://localhost:8080")
   @GetMapping("/list/{account}/{type}")
   Map<String, Object> list(@PathVariable String account, @PathVariable String type)
   {
@@ -109,6 +112,7 @@ public class CloudezReportController
     return output;
   }
 
+  @CrossOrigin(origins = "http://localhost:8080")
   @GetMapping("/download/{account}/{type}/{report}")
   ResponseEntity<byte[]> download(@PathVariable String account, @PathVariable String type, @PathVariable String report)
   {
