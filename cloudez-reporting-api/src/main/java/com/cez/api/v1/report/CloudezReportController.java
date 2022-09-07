@@ -14,7 +14,6 @@ import org.apache.commons.csv.CSVPrinter;
 import org.joda.time.DateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -38,19 +37,14 @@ public class CloudezReportController
   @Autowired
   private AssetRepository repository;
 
-  @Autowired
-  private Environment env;
-
   private Credentials credentials = null;
   private AmazonS3 s3Client = null;
 
   @Value("${execution.mode}")
   private String executionMode;
 
-  public CloudezReportController()
-  {
-    credentials = new Credentials(executionMode);
-  }
+  @Value("${reports.bucket.name}")
+  private String bucketName;
 
   @GetMapping("/ping")
   String ping()
@@ -59,13 +53,14 @@ public class CloudezReportController
   }
 
   @GetMapping("/store/{account}/{type}")
-  String store(@PathVariable String account, @PathVariable Integer type)
+  String store(@PathVariable String account, @PathVariable String type)
   {
+    credentials = new Credentials(executionMode);
     String uploadHash = null;
-    if (type == 0)
+    if (type.equalsIgnoreCase("inventory"))
     {
       DateTime time = new DateTime();
-      String reportName = env.getProperty("reports.inventory.type") + "-" + time.getYear() + time.getMonthOfYear() + time.getDayOfMonth() + ".csv";
+      String reportName = type + "-" + time.getYear() + time.getMonthOfYear() + time.getDayOfMonth() + ".csv";
       s3Client = new Client(account, credentials).getS3Client();
       try
       {
@@ -78,8 +73,7 @@ public class CloudezReportController
         {
           csv.printRecord(asset.getAccount(), asset.getService(), asset.getUniqueIdentifier(), asset.getResourceType(), asset.getArn(), asset.getRegion());
         }
-        uploadHash =
-            s3Client.putObject(env.getProperty("reports.bucket.name"), env.getProperty("reports.inventory.type") + "/" + reportName, report).getContentMd5();
+        uploadHash = s3Client.putObject(bucketName, type + "/" + reportName, report).getContentMd5();
         report.delete();
       }
       catch (IOException e)
@@ -90,13 +84,14 @@ public class CloudezReportController
     return uploadHash;
   }
 
-  @GetMapping("/list/{account}")
-  Map<String, Object> list(@PathVariable String account)
+  @GetMapping("/list/{account}/{type}")
+  Map<String, Object> list(@PathVariable String account, @PathVariable String type)
   {
+    credentials = new Credentials(executionMode);
     Map<String, Object> output = new HashMap<String, Object>();
     s3Client = new Client(account, credentials).getS3Client();
     ListObjectsV2Result result = null;
-    result = s3Client.listObjectsV2(env.getProperty("reports.bucket.name"), env.getProperty("reports.inventory.type"));
+    result = s3Client.listObjectsV2(bucketName, type);
     List<S3ObjectSummary> objects = result.getObjectSummaries();
     List<Map<String, Object>> reports = new ArrayList<Map<String, Object>>();
     for (S3ObjectSummary os : objects)
@@ -107,21 +102,20 @@ public class CloudezReportController
       reportInformation.put("report", StringUtils.cleanPath(report));
       reportInformation.put("timestamp", os.getLastModified());
       reportInformation.put("size", os.getSize());
-      reportInformation.put("description", env.getProperty("reports.inventory.description"));
+      reportInformation.put("description", "Inventory of all assets in the AWS account");
       reports.add(reportInformation);
     }
-    output.put(env.getProperty("reports.inventory.type"), reports);
+    output.put(type, reports);
     return output;
   }
 
-  @GetMapping("/download/{account}/{report}")
-  ResponseEntity<byte[]> download(@PathVariable String account, @PathVariable String report)
+  @GetMapping("/download/{account}/{type}/{report}")
+  ResponseEntity<byte[]> download(@PathVariable String account, @PathVariable String type, @PathVariable String report)
   {
     s3Client = new Client(account, credentials).getS3Client();
 
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    S3Object s3object =
-        s3Client.getObject(new GetObjectRequest(env.getProperty("reports.bucket.name"), env.getProperty("reports.inventory.type") + "/" + report));
+    S3Object s3object = s3Client.getObject(new GetObjectRequest(bucketName, type + "/" + report));
     try
     {
       InputStream is = s3object.getObjectContent();
