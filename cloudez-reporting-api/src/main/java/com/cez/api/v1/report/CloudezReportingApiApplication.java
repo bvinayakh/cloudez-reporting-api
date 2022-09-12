@@ -26,7 +26,8 @@ public class CloudezReportingApiApplication
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     CorsConfiguration config = new CorsConfiguration();
     config.setAllowCredentials(true);
-    config.setAllowedOrigins(Arrays.asList("*"));
+    // config.setAllowedOrigins(Arrays.asList("*"));
+    config.setAllowedOriginPatterns(Arrays.asList("*"));
     config.setAllowedMethods(Collections.singletonList("*"));
     config.setAllowedHeaders(Collections.singletonList("*"));
     source.registerCorsConfiguration("/**", config);
