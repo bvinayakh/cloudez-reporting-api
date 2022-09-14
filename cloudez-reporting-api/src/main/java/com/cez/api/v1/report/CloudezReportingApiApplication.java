@@ -26,13 +26,8 @@ public class CloudezReportingApiApplication
     CorsConfiguration config = new CorsConfiguration();
     config.setAllowCredentials(true);
     config.setAllowedOriginPatterns(Arrays.asList("*"));
-
-    // config.setAllowedMethods(Collections.singletonList("*"));
-    config.setAllowedMethods(Collections.singletonList("GET, POST, PUT, DELETE,OPTIONS, HEAD"));
-
-    // config.setAllowedHeaders(Collections.singletonList("*"));
-    config.setAllowedHeaders(Collections.singletonList("CSRF-Token, X-Requested-By, Authorization, Content-Type, Referer, User-Agent"));
-
+    config.setAllowedMethods(Collections.singletonList("*"));
+    config.setAllowedHeaders(Collections.singletonList("*"));
     source.registerCorsConfiguration("/**", config);
     FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(new CorsFilter(source));
     bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
