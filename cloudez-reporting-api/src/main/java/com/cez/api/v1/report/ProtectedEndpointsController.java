@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,6 +33,7 @@ import com.cez.api.v1.utils.ReportUtils;
 
 @RestController
 @RequestMapping("reporting/protected/api/v1")
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class ProtectedEndpointsController
 {
   @Autowired
