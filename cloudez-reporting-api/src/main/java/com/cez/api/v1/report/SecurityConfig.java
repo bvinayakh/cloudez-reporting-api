@@ -27,6 +27,7 @@ public class SecurityConfig
   {
     return http.cors(Customizer.withDefaults()).csrf(csrf -> csrf.disable()).authorizeRequests(auth -> {
       auth.antMatchers(PUBLIC_ENDPOINT).permitAll();
+      auth.antMatchers(PROTECTED_ENDPOINT).permitAll();
     }).httpBasic(Customizer.withDefaults()).build();
   }
 
