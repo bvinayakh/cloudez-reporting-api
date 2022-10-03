@@ -1,11 +1,10 @@
-package com.cez.api.v1.commons.aws;
+package com.cez.api.v1.auth.aws;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.cez.api.v1.auth.aws.Credentials;
 
 public class Client
 {

@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,13 +28,13 @@ import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.cez.api.v1.auth.aws.Client;
 import com.cez.api.v1.auth.aws.Credentials;
-import com.cez.api.v1.commons.aws.Client;
 import com.cez.api.v1.utils.ReportUtils;
+import com.cez.api.v1.utils.SortByLastModified;
 
 @RestController
 @RequestMapping("reporting/protected/api/v1")
-@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class ProtectedEndpointsController
 {
   @Autowired
@@ -89,6 +90,7 @@ public class ProtectedEndpointsController
     ListObjectsV2Result result = null;
     result = s3Client.listObjectsV2(bucketName, type);
     List<S3ObjectSummary> objects = result.getObjectSummaries();
+    Collections.sort(objects, new SortByLastModified());
     List<Map<String, Object>> reports = new ArrayList<Map<String, Object>>();
     for (S3ObjectSummary os : objects)
     {
